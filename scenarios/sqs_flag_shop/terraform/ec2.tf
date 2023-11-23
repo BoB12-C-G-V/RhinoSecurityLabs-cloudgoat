@@ -4,7 +4,7 @@ resource "aws_key_pair" "bob-ec2-key-pair" {
 }
 
 resource "aws_instance" "cg_flag_shop_server" {
-  ami                         = "ami-0a313d6098716f372"
+  ami                         = "ami-0fc5d935ebf8bc3bc"
   instance_type               = "t2.micro"
   iam_instance_profile        = aws_iam_instance_profile.cg-ec2-instance-profile.name
   subnet_id                   = aws_subnet.cg-public-subnet-1.id
@@ -22,7 +22,7 @@ resource "aws_instance" "cg_flag_shop_server" {
 
   provisioner "file" {
     source      = "../assets/my_flask_app.zip"
-    destination = "/home/ec2-user/my_flask_app.zip"
+    destination = "/home/ubuntu/my_flask_app.zip"
     connection {
       type        = "ssh"
       user        = "ubuntu"
@@ -32,11 +32,11 @@ resource "aws_instance" "cg_flag_shop_server" {
   }
   provisioner "file" {
     source      = "../assets/insert_data.sql"
-    destination = "/home/ec2-user/insert_data.sql"
+    destination = "/home/ubuntu/insert_data.sql"
 
     connection {
       type        = "ssh"
-      user        = "ec2-user"
+      user        = "ubuntu"
       private_key = file(var.ssh-private-key-for-ec2)
       host        = self.public_ip
     }
@@ -44,6 +44,7 @@ resource "aws_instance" "cg_flag_shop_server" {
 
   user_data = <<-EOF
         #!/bin/bash
+        sudo apt-get install ec2-instance-connect
 
         echo 'export AWS_ACCESS_KEY_ID=${aws_iam_access_key.cg-web-sqs-manager_access_key.id}' >> /etc/environment
         echo 'export AWS_SECRET_ACCESS_KEY=${aws_iam_access_key.cg-web-sqs-manager_access_key.secret}' >> /etc/environment
@@ -58,13 +59,13 @@ resource "aws_instance" "cg_flag_shop_server" {
         sudo pip3 install boto3
         sudo apt install -y mysql-client
 
-        cd /home/ec2-user
+        cd /home/ubuntu
         unzip my_flask_app.zip -d ./my_flask_app
         sudo chmod +x *.py
         cd my_flask_app
 
-        mysql -h ${aws_db_instance.cg-rds.endpoint} -u ${aws_db_instance.cg-rds.username} -p${aws_db_instance.cg-rds.password} ${aws_db_instance.cg-rds.db_name} < /home/ec2-user/insert_data.sql
-
+        mysql -h ${aws_db_instance.cg-rds.endpoint} -u ${aws_db_instance.cg-rds.username} -p${aws_db_instance.cg-rds.password} -e "CREATE DATABASE IF NOT EXISTS cash;"
+        mysql -h ${aws_db_instance.cg-rds.endpoint} -u ${aws_db_instance.cg-rds.username} -p${aws_db_instance.cg-rds.password} cash < /home/ubuntu/your_sql_file.sql
 
         sudo python3 app.py
         EOF
