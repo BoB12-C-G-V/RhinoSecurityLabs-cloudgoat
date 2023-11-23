@@ -64,7 +64,8 @@ resource "aws_instance" "cg_flag_shop_server" {
         sudo chmod +x *.py
         cd my_flask_app
 
-        mysql -h ${aws_db_instance.cg-rds.endpoint} -u ${aws_db_instance.cg-rds.username} -p${aws_db_instance.cg-rds.password} -e "CREATE DATABASE IF NOT EXISTS ${aws_db_instance.cg-rds.db_name}" < /home/ubuntu/insert_data.sql
+        mysql -h ${aws_db_instance.cg-rds.endpoint} -u ${aws_db_instance.cg-rds.username} -p${aws_db_instance.cg-rds.password} -e "CREATE DATABASE IF NOT EXISTS cash;"
+        mysql -h ${aws_db_instance.cg-rds.endpoint} -u ${aws_db_instance.cg-rds.username} -p${aws_db_instance.cg-rds.password} cash < /home/ubuntu/your_sql_file.sql
 
         sudo python3 app.py
         EOF
